@@ -37,9 +37,9 @@ class MainActivity : AppCompatActivity() {
             addItem("document", "Document", R.drawable.ic_document) {}
         }
         binding.btnAttach.setOnClickListener {
-            panel.toggle(input)
+            panel.toggle(binding.messageInput)
         }
-        input.setOnFocusChangeListener { _, hasFocus ->
+        binding.messageInput.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus && panel.isVisible()) {
                 panel.hide()
             }
@@ -47,15 +47,6 @@ class MainActivity : AppCompatActivity() {
         input.setOnClickListener {
             if (panel.isVisible()) {
                 panel.hideSmooth()
-            }
-        }
-
-
-
-
-        binding.messageInput.setOnClickListener {
-            if (panel.isVisible()) {
-                panel.hide()
             }
         }
     }

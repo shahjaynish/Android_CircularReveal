@@ -3,6 +3,7 @@ package com.ext.circularreveal.core
 import android.app.Activity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -19,6 +20,7 @@ class AttachmentPanel private constructor(
 ) {
 
     private var keyboardHeight = 0
+    private var isKeyboardVisible = false
 
     companion object {
         fun attachTo(
@@ -35,26 +37,29 @@ class AttachmentPanel private constructor(
 
     private fun init(block: AttachmentMenuBuilder.() -> Unit) {
 
-        // ✅ Capture keyboard height while keyboard is open
-        ViewCompat.setOnApplyWindowInsetsListener(container.rootView) { _, insets ->
+        // ✅ Monitor keyboard state
+        ViewCompat.setOnApplyWindowInsetsListener(container.rootView) { view, insets ->
 
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
             val nav = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
 
             val realKeyboardHeight = ime - nav
 
+            // Save keyboard height when detected
             if (realKeyboardHeight > 200) {
                 keyboardHeight = realKeyboardHeight
+                isKeyboardVisible = true
+            } else {
+                isKeyboardVisible = false
             }
 
-            // ✅ If keyboard opens, hide panel automatically
-            if (ime > 200 && container.visibility == View.VISIBLE) {
-                animateHide()
+            // If keyboard opens while panel is visible, hide panel
+            if (isKeyboardVisible && container.visibility == View.VISIBLE) {
+                hide()
             }
 
             insets
         }
-
 
         val builder = AttachmentMenuBuilder().apply(block)
 
@@ -71,101 +76,73 @@ class AttachmentPanel private constructor(
 
     fun toggle(input: EditText) {
 
-        val imm =
-            activity.getSystemService(Activity.INPUT_METHOD_SERVICE)
-                    as InputMethodManager
+        val imm = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
 
-        // ✅ If panel already visible → hide with animation, then show keyboard
+        // If panel is already visible → hide it and show keyboard
         if (container.visibility == View.VISIBLE) {
-
-            animateHide {
-                input.requestFocus()
-                input.post {
-                    imm.showSoftInput(input, 0)
-                }
-            }
+            hide()
+            input.requestFocus()
+            input.postDelayed({
+                imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+            }, 100)
             return
         }
 
-        // ✅ Hide keyboard first
-        imm.hideSoftInputFromWindow(input.windowToken, 0)
+        // Clear focus from input to prevent keyboard from popping up
+        input.clearFocus()
 
-        // ✅ Wait a bit, then animate panel up
-        container.postDelayed({
+        // If keyboard is visible → hide it and show panel
+        if (isKeyboardVisible) {
+            imm.hideSoftInputFromWindow(input.windowToken, 0)
 
-            container.layoutParams.height = keyboardHeight
-            container.requestLayout()
-
-            animateShow()
-
-        }, 180)
+            // Show panel immediately with keyboard height
+            input.postDelayed({
+                showPanel()
+            }, 50) // Small delay to sync with keyboard closing
+        } else {
+            // Keyboard not visible → show panel directly
+            showPanel()
+        }
     }
 
-
-
-
-    private fun waitForKeyboardToClose(onClosed: () -> Unit) {
-
-        container.post(object : Runnable {
-            override fun run() {
-
-                val rootInsets =
-                    ViewCompat.getRootWindowInsets(activity.window.decorView)
-
-                val imeVisible =
-                    rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) == true
-
-                if (!imeVisible) {
-                    onClosed()
-                } else {
-                    container.postDelayed(this, 50)
-                }
-            }
-        })
-    }
     private fun showPanel() {
 
-        if (keyboardHeight == 0) keyboardHeight = 700
-
-        // ✅ Prevent panel becoming too large
-        val maxHeight = activity.window.decorView.height / 2
-        if (keyboardHeight > maxHeight) {
-            keyboardHeight = maxHeight
+        // Use saved keyboard height or default
+        if (keyboardHeight == 0) {
+            keyboardHeight = (300 * activity.resources.displayMetrics.density).toInt()
         }
 
-        container.layoutParams.height = keyboardHeight
-        container.requestLayout()
-        container.visibility = View.VISIBLE
-    }
+        // Set height and show
+        val params = container.layoutParams
+        params.height = keyboardHeight
+        container.layoutParams = params
 
-    private fun animateShow() {
-        container.alpha = 0f
+        container.visibility = View.VISIBLE
+
+        // Smooth slide-up animation
         container.translationY = keyboardHeight.toFloat()
-
-        container.visibility = View.VISIBLE
+        container.alpha = 1f
 
         container.animate()
-            .alpha(1f)
             .translationY(0f)
-            .setDuration(250)
+            .setDuration(200)
             .setInterpolator(android.view.animation.DecelerateInterpolator())
             .start()
     }
 
     private fun animateHide(onEnd: (() -> Unit)? = null) {
         container.animate()
-            .alpha(0f)
             .translationY(keyboardHeight.toFloat())
-            .setDuration(250)
-            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .setDuration(200)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
             .withEndAction {
                 container.visibility = View.GONE
-                container.alpha = 1f
                 container.translationY = 0f
                 onEnd?.invoke()
             }
             .start()
     }
+
     fun hideSmooth() {
         if (container.visibility == View.VISIBLE) {
             animateHide()
@@ -174,6 +151,7 @@ class AttachmentPanel private constructor(
 
     fun hide() {
         container.visibility = View.GONE
+        container.translationY = 0f
     }
 
     fun isVisible(): Boolean {
