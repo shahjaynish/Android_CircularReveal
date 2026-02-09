@@ -75,11 +75,11 @@ class AttachmentPanel private constructor(
 
         // If panel is already visible → hide it and show keyboard
         if (container.visibility == View.VISIBLE) {
-            hide()
-            input.requestFocus()
-            input.postDelayed({
+            animateHide {
+                // Show keyboard only after panel is fully hidden
+                input.requestFocus()
                 imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
-            }, 0)
+            }
             return
         }
 

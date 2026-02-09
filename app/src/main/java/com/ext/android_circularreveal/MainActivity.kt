@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -32,10 +33,35 @@ class MainActivity : AppCompatActivity() {
             activity = this,
             container = binding.attachmentContainer
         ) {
-            addItem("gallery", "Gallery", R.drawable.ic_gallery) {}
-            addItem("camera", "Camera", R.drawable.ic_camera) {}
-            addItem("document", "Document", R.drawable.ic_document) {}
+
+            addItem("gallery", "Gallery", R.drawable.ic_gallery) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Gallery Selected",
+                    Toast.LENGTH_SHORT
+                ).show()
+                panel.hide()
+            }
+
+            addItem("camera", "Camera", R.drawable.ic_camera) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Camera Selected",
+                    Toast.LENGTH_SHORT
+                ).show()
+                panel.hide()
+            }
+
+            addItem("document", "Document", R.drawable.ic_document) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Document Selected",
+                    Toast.LENGTH_SHORT
+                ).show()
+                panel.hideSmooth()
+            }
         }
+
         binding.btnAttach.setOnClickListener {
             panel.toggle(binding.messageInput)
         }
