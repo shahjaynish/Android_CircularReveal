@@ -44,11 +44,6 @@ class MainActivity : AppCompatActivity() {
                 panel.hide()
             }
         }
-        input.setOnClickListener {
-            if (panel.isVisible()) {
-                panel.hideSmooth()
-            }
-        }
     }
 
     override fun onBackPressed() {

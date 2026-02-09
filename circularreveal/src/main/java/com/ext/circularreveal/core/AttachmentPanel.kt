@@ -53,11 +53,6 @@ class AttachmentPanel private constructor(
                 isKeyboardVisible = false
             }
 
-            // If keyboard opens while panel is visible, hide panel
-            if (isKeyboardVisible && container.visibility == View.VISIBLE) {
-                hide()
-            }
-
             insets
         }
 
@@ -84,7 +79,7 @@ class AttachmentPanel private constructor(
             input.requestFocus()
             input.postDelayed({
                 imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
-            }, 100)
+            }, 0)
             return
         }
 
@@ -98,7 +93,7 @@ class AttachmentPanel private constructor(
             // Show panel immediately with keyboard height
             input.postDelayed({
                 showPanel()
-            }, 50) // Small delay to sync with keyboard closing
+            }, 200) // Small delay to sync with keyboard closing
         } else {
             // Keyboard not visible → show panel directly
             showPanel()
